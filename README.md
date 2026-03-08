@@ -76,17 +76,15 @@ cp .env.example .env
 
 | Variable              | Default     | Description                    |
 |-----------------------|-------------|--------------------------------|
-| MYSQL_ROOT_PASSWORD   | rootpassword| MySQL root password            |
-| MYSQL_DATABASE        | app         | Default database               |
-| MYSQL_USER            | appuser     | Application user               |
-| MYSQL_PASSWORD        | apppassword | Application password           |
+| MYSQL_ROOT_PASSWORD   | rootpassword| MySQL root (required)          |
+| MYSQL_DATABASE        | -           | Optional; create from phpMyAdmin |
+| MYSQL_USER            | -           | Optional; create from phpMyAdmin |
+| MYSQL_PASSWORD        | -           | Optional; for MYSQL_USER       |
 | LETSENCRYPT_EMAIL     | admin@example.com | For Let's Encrypt (ssl) |
 | LETSENCRYPT_STAGING   | 0           | Set to 1 for testing (staging) |
 | PUSHER_APP_ID/KEY/SECRET | -    | WebSocket auth (match Laravel .env) |
 
-**phpMyAdmin** (port 8080) shows a login form. Use MySQL credentials:
-- **root** / value of `MYSQL_ROOT_PASSWORD`
-- **appuser** / value of `MYSQL_PASSWORD`
+**phpMyAdmin** (port 8080) shows a login form. Use **root** / `MYSQL_ROOT_PASSWORD`. Create databases and users from phpMyAdmin, or uncomment `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` in `.env` to auto-create them.
 
 ### Sites (nginx vhosts)
 
