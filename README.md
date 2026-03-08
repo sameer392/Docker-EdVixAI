@@ -2,6 +2,21 @@
 
 A multi-container Docker setup with **nginx**, **PHP 8.4**, **MySQL**, **phpMyAdmin**, and **Redis**.
 
+## Prerequisites
+
+**Docker** and **Docker Compose** must be installed.
+
+```bash
+# Ubuntu/Debian - install Compose plugin (recommended)
+sudo apt update
+sudo apt install docker-compose-plugin
+
+# Or standalone compose
+sudo apt install docker-compose
+```
+
+Use `docker compose` (with space) if you have the plugin, or `docker-compose` (with hyphen) for standalone.
+
 ## Services
 
 | Service    | Port | Description                    |
@@ -190,7 +205,7 @@ $redis->connect('redis', 6379);
 ## Commands
 
 ```bash
-# Start
+# Start (use docker-compose if docker compose fails)
 docker compose up -d
 
 # Stop
@@ -202,4 +217,29 @@ docker compose logs -f
 # Rebuild PHP after Dockerfile changes
 docker compose build php --no-cache
 docker compose up -d php
+```
+
+## Troubleshooting
+
+### "Connection refused" / "Cannot connect to Docker daemon"
+Docker service is not running. Start it:
+```bash
+sudo systemctl start docker
+```
+
+### "docker.socket failed to load" / "Device or resource busy"
+Start `docker.socket` first (it provides the socket for Docker), then `docker`:
+
+```bash
+sudo systemctl start docker.socket
+sudo systemctl start docker
+```
+
+If that fails, try:
+```bash
+sudo systemctl stop podman-docker.socket podman-docker.service 2>/dev/null
+sudo rm -f /var/run/docker.sock /var/run/docker.pid
+sudo systemctl daemon-reload
+sudo systemctl start docker.socket
+sudo systemctl start docker
 ```
