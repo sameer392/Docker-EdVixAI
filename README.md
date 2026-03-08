@@ -31,12 +31,14 @@ Use `docker compose` (with space) if you have the plugin, or `docker-compose` (w
 ## Quick Start
 
 ```bash
-cd /root/docker
+cd /var/www/docker
 cp .env.example .env
 cp nginx/sites.conf.example nginx/sites.conf
 # Edit .env and nginx/sites.conf with your values
 docker compose up -d
 ```
+
+**Project location:** `/var/www/docker` (moved from `/var/docker` for easier management with `www/`)
 
 - **Website:** http://localhost
 - **phpMyAdmin:** http://localhost:8080 — login with MySQL user (e.g. `root` / `MYSQL_ROOT_PASSWORD` or `appuser` / `MYSQL_PASSWORD`)
@@ -262,3 +264,13 @@ sudo systemctl daemon-reload
 sudo systemctl start docker.socket
 sudo systemctl start docker
 ```
+
+### Cloudflare 521 "Web server is down"
+Cloudflare cannot reach your origin. Check:
+
+1. **Containers running:** `cd /var/www/docker && docker compose ps` — nginx should be Up
+2. **Start if needed:** `cd /var/www/docker && docker compose up -d`
+3. **UFW:** `sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw reload`
+4. **Cloud provider firewall:** If on AWS/GCP/DigitalOcean, allow inbound 80, 443 in the cloud Security Group / Firewall
+5. **Cloudflare A record:** Must point to your server's **public IP** (run `curl -s ifconfig.me` on the server)
+6. **SSL mode:** For `cloudflare` in sites.conf, use Cloudflare **Flexible** SSL (origin = HTTP)

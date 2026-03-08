@@ -8,7 +8,7 @@ echo "Generating initial HTTP config (all sites serve HTTP for ACME)..."
 generate_config http 0
 
 echo "Starting nginx..."
-nginx &
+nginx -g "daemon off;" &
 
 sleep 3
 
