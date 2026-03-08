@@ -1,0 +1,20 @@
+# Site definitions: one per line
+# Copy this file to sites.conf and customize for your domains.
+#   cp nginx/sites.conf.example nginx/sites.conf
+#
+# Format: domains => path [ssl|cloudflare]
+#
+#   ssl       = Let's Encrypt HTTPS (domain must point to this server)
+#   cloudflare = HTTP only (Cloudflare Flexible - SSL at edge)
+#   (no flag) = HTTP only
+#
+# Root path for Laravel: /var/www/your-domain.com/public_html/public
+#
+# Example: main domain with Let's Encrypt
+# example.com .example.com => /var/www/example.com/public_html/public ssl
+#
+# Example: subdomain pointing to same app
+# demo.example.com => /var/www/example.com/public_html/public ssl
+#
+# Example: Cloudflare-proxied (no origin cert needed)
+# school.example.com => /var/www/example.com/public_html/public cloudflare

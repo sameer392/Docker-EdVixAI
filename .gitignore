@@ -1,4 +1,5 @@
 .env
+nginx/sites.conf
 *.log
 .DS_Store
 

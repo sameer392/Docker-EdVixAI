@@ -32,6 +32,9 @@ Use `docker compose` (with space) if you have the plugin, or `docker-compose` (w
 
 ```bash
 cd /root/docker
+cp .env.example .env
+cp nginx/sites.conf.example nginx/sites.conf
+# Edit .env and nginx/sites.conf with your values
 docker compose up -d
 ```
 
@@ -47,14 +50,14 @@ All data uses host bind mounts — no data loss on `docker compose down` or Dock
 | Data | Host path | Notes |
 |------|-----------|-------|
 | Website code, storage, cache | `www/` | Laravel `storage/`, `bootstrap/cache/` live here |
-| nginx config | `nginx/sites.conf`, `nginx/templates/` | In project |
+| nginx sites | `nginx/sites.conf` | Copy from `sites.conf.example` (gitignored, like `.env`) |
 | MySQL data | `docker/data/mysql/` | Auto-created on first run |
 | Redis data | `docker/data/redis/` | Auto-created on first run |
 | SSL certificates | `docker/data/certbot/conf/` | Let's Encrypt certs |
 | Certbot challenges | `docker/data/certbot/www/` | ACME validation |
 | **Credentials** | `docker/.env` | MySQL root/app user, Pusher keys — **backup this file** |
 
-Docker creates data folders automatically on first run. The `.env` file (copy from `.env.example`) holds credentials and lives on the host — survives Docker reset if you back it up.
+Docker creates data folders automatically on first run. Copy `.env.example` to `.env` and `nginx/sites.conf.example` to `nginx/sites.conf` before first run. Both are gitignored — your credentials and domain setup survive `git pull`.
 
 **Backup:** Copy the `data/` and `www/` folders. Restore them after a fresh install and run `docker compose up -d`.
 
@@ -88,7 +91,15 @@ cp .env.example .env
 
 ### Sites (nginx vhosts)
 
-Sites are defined in `nginx/sites.conf` — **no nginx config editing needed**.
+Sites are defined in `nginx/sites.conf`. Copy the template and customize:
+
+```bash
+cp nginx/sites.conf.example nginx/sites.conf
+```
+
+Then edit `nginx/sites.conf` with your domains. This file is **gitignored** (like `.env`) — your domain setup is not overwritten on `git pull`.
+
+If `sites.conf` was already committed, untrack it: `git rm --cached nginx/sites.conf`
 
 **Format:** `domains => path [ssl|cloudflare]`
 
