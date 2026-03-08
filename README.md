@@ -129,7 +129,12 @@ school.cloudflare.com => /var/www/rbill.in/public_html/public cloudflare
 0 0 * * * docker exec nginx /certbot-renew.sh
 ```
 
-Restart nginx: `docker compose restart nginx`
+**Add or change sites (zero downtime):**
+```bash
+# Edit nginx/sites.conf, then:
+docker exec nginx /reload-sites.sh
+```
+This regenerates vhost configs, obtains new SSL certs if needed, and runs `nginx -s reload` — no connection drop. No container restart needed.
 
 ### Application Code
 

@@ -11,10 +11,13 @@ COPY templates/site-http.template /etc/nginx/templates/site-http.template
 COPY templates/site-http-redirect.template /etc/nginx/templates/site-http-redirect.template
 COPY templates/site-https.template /etc/nginx/templates/site-https.template
 
+COPY sites-common.sh /etc/nginx/sites-common.sh
 COPY entrypoint.sh /entrypoint.sh
 COPY certbot-renew.sh /certbot-renew.sh
-RUN chmod +x /entrypoint.sh /certbot-renew.sh
+COPY reload-sites.sh /reload-sites.sh
+RUN chmod +x /entrypoint.sh /certbot-renew.sh /reload-sites.sh
 
-COPY sites.conf /etc/nginx/sites.conf
+# Default fallback; compose mounts sites.conf over this at runtime
+COPY sites.conf.example /etc/nginx/sites.conf
 
 ENTRYPOINT ["/entrypoint.sh"]
