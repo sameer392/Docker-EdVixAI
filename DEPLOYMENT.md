@@ -12,21 +12,18 @@ docker compose up -d
 docker compose down
 ```
 
-## Cloudflare 521 Fix
-If edvixai.com shows "521 Web server is down":
+## Cloudflare 521 Fix (Direct IP works but domain doesn't)
+When the site loads via `http://208.110.95.204/` but not via `edvixai.com`, Cloudflare can't reach the origin.
 
-1. **Start containers:**
-   ```bash
-   cd /var/www/docker && docker compose up -d
-   ```
+### Quick workaround: Bypass Cloudflare (DNS only)
+In Cloudflare → DNS → find `edvixai.com` A record → click the **orange cloud** to turn it **grey** (DNS only).
+Site will work immediately. You lose CDN/DDoS protection until proxy is fixed.
 
-2. **Test locally:** `curl -H "Host: edvixai.com" http://127.0.0.1:80/` — should return 200
+### Fix the proxy
+1. **Cloud provider firewall** (most common): Log into your hosting dashboard (DigitalOcean, AWS, Vultr, etc.). Find the **Firewall** or **Security Group** for this server. Add inbound rules: allow **port 80** and **port 443** from **0.0.0.0/0** (anywhere). Cloud provider firewalls are separate from UFW.
 
-3. **Cloud provider firewall:** AWS/GCP/DigitalOcean have their own firewalls. Add inbound rules for ports 80 and 443.
+2. **Cloudflare A record:** Must point to server IP. Run `curl -4 -s ifconfig.me` to get it.
 
-4. **Cloudflare DNS:** A record for edvixai.com must point to server's public IP:
-   ```bash
-   curl -s ifconfig.me   # Use this IP in Cloudflare
-   ```
+3. **Cloudflare SSL:** Set to **Flexible** (origin is HTTP-only).
 
-5. **Cloudflare SSL:** With `cloudflare` in sites.conf, set SSL mode to **Flexible** in Cloudflare dashboard.
+4. **Contact hosting support:** Ask if they block Cloudflare IP ranges—some hosts do.
