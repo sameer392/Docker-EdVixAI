@@ -1,0 +1,12 @@
+; Laravel queue worker - copy to laravel-worker.conf and edit path
+; cp laravel-worker.conf.example laravel-worker.conf
+;
+;[program:laravel-worker]
+;process_name=%(program_name)s_%(process_num)02d
+;command=php /var/www/example1.com/public_html/artisan queue:work --sleep=3 --tries=3
+;autostart=true
+;autorestart=true
+;numprocs=2
+;user=www-data
+;redirect_stderr=true
+;stdout_logfile=/var/www/example1.com/public_html/storage/logs/worker.log

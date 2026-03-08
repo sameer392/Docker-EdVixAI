@@ -1,0 +1,111 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/sites.conf:/etc/nginx/sites.conf:ro
+      - ../www:/var/www:ro
+      - ./data/certbot/www:/var/www/certbot
+      - ./data/certbot/conf:/etc/letsencrypt
+    environment:
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@example.com}
+      - LETSENCRYPT_STAGING=${LETSENCRYPT_STAGING:-0}
+    depends_on:
+      - php
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    image: php:8.4-fpm-app
+    container_name: php
+    volumes:
+      - ../www:/var/www
+    environment:
+      - PHP_MEMORY_LIMIT=1024M
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-app}
+      - MYSQL_USER=${MYSQL_USER:-appuser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-apppassword}
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-appuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-apppassword}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-appuser}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-apppassword}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  websocket:
+    image: quay.io/soketi/soketi:latest
+    container_name: websocket
+    ports:
+      - "8090:6001"
+    environment:
+      SOKETI_DEFAULT_APP_ID: ${PUSHER_APP_ID:-app-id}
+      SOKETI_DEFAULT_APP_KEY: ${PUSHER_APP_KEY:-app-key}
+      SOKETI_DEFAULT_APP_SECRET: ${PUSHER_APP_SECRET:-app-secret}
+      SOKETI_DEBUG: ${SOKETI_DEBUG:-0}
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge

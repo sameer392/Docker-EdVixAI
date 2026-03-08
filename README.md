@@ -1,0 +1,205 @@
+# Docker Development Stack
+
+A multi-container Docker setup with **nginx**, **PHP 8.4**, **MySQL**, **phpMyAdmin**, and **Redis**.
+
+## Services
+
+| Service    | Port | Description                    |
+|------------|------|--------------------------------|
+| nginx      | 80   | Web server, proxies PHP to FPM |
+| php        | -    | PHP 8.4-FPM with PDO, Redis, GD |
+| mysql      | 3306 | MySQL 8.0 database             |
+| phpmyadmin | 8080 | Web UI for MySQL               |
+| redis      | 6379 | Redis in-memory store          |
+| websocket  | 8090 | Soketi WebSocket (Laravel Echo)|
+
+## Quick Start
+
+```bash
+cd /root/docker
+docker compose up -d
+```
+
+- **Website:** http://localhost
+- **phpMyAdmin:** http://localhost:8080
+- **MySQL:** localhost:3306 (from host)
+- **WebSocket:** ws://localhost:8090
+
+## Data Persistence
+
+All data uses host bind mounts — no data loss on `docker compose down` or Docker reinstall.
+
+| Data | Host path | Notes |
+|------|-----------|-------|
+| Website code, storage, cache | `www/` | Laravel `storage/`, `bootstrap/cache/` live here |
+| nginx config | `nginx/sites.conf`, `nginx/templates/` | In project |
+| MySQL data | `docker/data/mysql/` | Auto-created on first run |
+| Redis data | `docker/data/redis/` | Auto-created on first run |
+| SSL certificates | `docker/data/certbot/conf/` | Let's Encrypt certs |
+| Certbot challenges | `docker/data/certbot/www/` | ACME validation |
+
+Docker creates these folders automatically on first run — no manual setup needed (they're in `.gitignore` so they won't be in the repo).
+
+**Backup:** Copy the `data/` and `www/` folders. Restore them after a fresh install and run `docker compose up -d`.
+
+**Migrating from named volumes:** If you had data in the old setup, copy it before switching:
+```bash
+docker volume ls  # Find volume names (e.g. docker_mysql_data)
+docker run --rm -v VOLUME_NAME:/from -v $(pwd)/data/mysql:/to alpine sh -c "cp -a /from/. /to/"
+```
+
+## Configuration
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and adjust:
+
+```bash
+cp .env.example .env
+```
+
+| Variable              | Default     | Description                    |
+|-----------------------|-------------|--------------------------------|
+| MYSQL_ROOT_PASSWORD   | rootpassword| MySQL root password            |
+| MYSQL_DATABASE        | app         | Default database               |
+| MYSQL_USER            | appuser     | Application user               |
+| MYSQL_PASSWORD        | apppassword | Application password           |
+| LETSENCRYPT_EMAIL     | admin@example.com | For Let's Encrypt (ssl) |
+| LETSENCRYPT_STAGING   | 0           | Set to 1 for testing (staging) |
+| PUSHER_APP_ID/KEY/SECRET | -    | WebSocket auth (match Laravel .env) |
+
+### Sites (nginx vhosts)
+
+Sites are defined in `nginx/sites.conf` — **no nginx config editing needed**.
+
+**Format:** `domains => path [ssl|cloudflare]`
+
+| Flag        | Behaviour |
+|-------------|-----------|
+| **ssl**     | Let's Encrypt HTTPS. Domain must point to this server (DNS A record). |
+| **cloudflare** | HTTP only. Cloudflare handles SSL at the edge (Flexible mode). |
+| *(no flag)* | HTTP only. |
+
+```
+# Let's Encrypt for schools without Cloudflare
+rbill.in .rbill.in => /var/www/rbill.in/public_html/public ssl
+demo.learning-cube.com => /var/www/rbill.in/public_html/public ssl
+
+# Cloudflare-proxied school (SSL at Cloudflare, HTTP to origin)
+school.cloudflare.com => /var/www/rbill.in/public_html/public cloudflare
+```
+
+- `.rbill.in` — matches rbill.in and all subdomains
+- **ssl** — Certbot obtains cert at startup; ensure port 80 is reachable from the internet
+- **cloudflare** — No origin cert; Cloudflare Flexible SSL or use Cloudflare Origin Certificate separately
+
+**Laravel:** Use the `public` folder as document root.
+
+**Certificate renewal** — Add to host crontab:
+```bash
+0 0 * * * docker exec nginx /certbot-renew.sh
+```
+
+Restart nginx: `docker compose restart nginx`
+
+### Application Code
+
+- **Laravel:** `/root/www/rbill.in/public_html/` (docroot = `public_html/public`)
+- **Default (localhost):** `/root/www/html/`
+
+Mounted as `/var/www` in containers.
+
+## PHP Extensions
+
+The PHP image includes: `pdo_mysql`, `mysqli`, `redis`, `gd`, `zip`, `intl`, `opcache`, `bcmath`, `soap`, `fileinfo`, `mbstring`, and Composer.
+
+**Supervisor** manages PHP-FPM and can run Laravel queue workers. To add a worker:
+```bash
+cp php/supervisor/conf.d/laravel-worker.conf.example php/supervisor/conf.d/laravel-worker.conf
+# Edit the artisan path and rebuild
+docker compose build php --no-cache && docker compose up -d php
+```
+
+## Connecting from PHP
+
+- **MySQL:** host `mysql`, user/password from `.env`
+- **Redis:** host `redis`, port `6379`
+- **WebSocket:** host `websocket`, port `6001` (from other containers)
+
+## WebSocket (Soketi)
+
+Connect at `ws://YOUR-SERVER-IP:8090`.
+
+### Pusher credentials (PUSHER_APP_ID, KEY, SECRET)
+
+**You define these yourself** — Soketi is self-hosted and does not issue credentials. Use the same values in both Docker `.env` and Laravel `.env`.
+
+- **Development:** Use simple placeholders, e.g. `app-id`, `app-key`, `app-secret`
+- **Production:** Generate strong random values (see below)
+
+**Generate production credentials:**
+```bash
+echo "PUSHER_APP_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null)"
+echo "PUSHER_APP_KEY=$(openssl rand -hex 16)"
+echo "PUSHER_APP_SECRET=$(openssl rand -hex 32)"
+```
+
+Keep `PUSHER_APP_SECRET` private; never expose it in frontend code.
+
+### Laravel Echo config (match `.env`):
+
+```javascript
+// resources/js/bootstrap.js or similar
+window.Echo = new Echo({
+    broadcaster: 'pusher',
+    key: process.env.MIX_PUSHER_APP_KEY,
+    wsHost: window.location.hostname,
+    wsPort: 8090,
+    wssPort: 443,
+    forceTLS: false,
+});
+```
+
+### Laravel `.env` broadcasting:
+
+```
+BROADCAST_CONNECTION=pusher
+PUSHER_APP_ID=app-id
+PUSHER_APP_KEY=app-key
+PUSHER_APP_SECRET=app-secret
+PUSHER_HOST=localhost
+PUSHER_PORT=8090
+PUSHER_SCHEME=http
+```
+
+## Connecting from PHP (code)
+
+```php
+// MySQL
+$pdo = new PDO(
+    'mysql:host=mysql;dbname=app',
+    getenv('MYSQL_USER') ?: 'appuser',
+    getenv('MYSQL_PASSWORD') ?: 'apppassword'
+);
+
+// Redis
+$redis = new Redis();
+$redis->connect('redis', 6379);
+```
+
+## Commands
+
+```bash
+# Start
+docker compose up -d
+
+# Stop
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# Rebuild PHP after Dockerfile changes
+docker compose build php --no-cache
+docker compose up -d php
+```

@@ -1,0 +1,6 @@
+.env
+*.log
+.DS_Store
+
+# Persistent data (host bind mounts - never commit)
+data/
