@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/sites.conf:/etc/nginx/sites.conf:ro
-      - ../www:/var/www:ro
+      - ..:/var/www:ro
       - ./data/certbot/www:/var/certbot-webroot
       - ./data/certbot/conf:/etc/letsencrypt
     environment:
@@ -28,7 +28,7 @@ services:
     image: php:8.4-fpm-app
     container_name: php
     volumes:
-      - ../www:/var/www
+      - ..:/var/www
     environment:
       - PHP_MEMORY_LIMIT=1024M
       - MYSQL_HOST=mysql
