@@ -10,7 +10,7 @@ services:
     volumes:
       - ./nginx/sites.conf:/etc/nginx/sites.conf:ro
       - ../www:/var/www:ro
-      - ./data/certbot/www:/var/www/certbot
+      - ./data/certbot/www:/var/certbot-webroot
       - ./data/certbot/conf:/etc/letsencrypt
     environment:
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@example.com}

@@ -3,7 +3,7 @@ set -e
 
 SITES_FILE="${SITES_FILE:-/etc/nginx/sites.conf}"
 CONF_DIR="/etc/nginx/conf.d"
-CERTBOT_WEBROOT="/var/www/certbot"
+CERTBOT_WEBROOT="/var/certbot-webroot"
 LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-admin@example.com}"
 LETSENCRYPT_STAGING="${LETSENCRYPT_STAGING:-0}"
 

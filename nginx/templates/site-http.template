@@ -7,7 +7,7 @@ server {
 
     # ACME challenge for Let's Encrypt (certbot)
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        root /var/certbot-webroot;
         try_files $uri =404;
     }
 
