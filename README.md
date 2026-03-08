@@ -36,7 +36,7 @@ docker compose up -d
 ```
 
 - **Website:** http://localhost
-- **phpMyAdmin:** http://localhost:8080
+- **phpMyAdmin:** http://localhost:8080 — login with MySQL user (e.g. `root` / `MYSQL_ROOT_PASSWORD` or `appuser` / `MYSQL_PASSWORD`)
 - **MySQL:** localhost:3306 (from host)
 - **WebSocket:** ws://localhost:8090
 
@@ -52,8 +52,9 @@ All data uses host bind mounts — no data loss on `docker compose down` or Dock
 | Redis data | `docker/data/redis/` | Auto-created on first run |
 | SSL certificates | `docker/data/certbot/conf/` | Let's Encrypt certs |
 | Certbot challenges | `docker/data/certbot/www/` | ACME validation |
+| **Credentials** | `docker/.env` | MySQL root/app user, Pusher keys — **backup this file** |
 
-Docker creates these folders automatically on first run — no manual setup needed (they're in `.gitignore` so they won't be in the repo).
+Docker creates data folders automatically on first run. The `.env` file (copy from `.env.example`) holds credentials and lives on the host — survives Docker reset if you back it up.
 
 **Backup:** Copy the `data/` and `www/` folders. Restore them after a fresh install and run `docker compose up -d`.
 
@@ -82,6 +83,10 @@ cp .env.example .env
 | LETSENCRYPT_EMAIL     | admin@example.com | For Let's Encrypt (ssl) |
 | LETSENCRYPT_STAGING   | 0           | Set to 1 for testing (staging) |
 | PUSHER_APP_ID/KEY/SECRET | -    | WebSocket auth (match Laravel .env) |
+
+**phpMyAdmin** (port 8080) shows a login form. Use MySQL credentials:
+- **root** / value of `MYSQL_ROOT_PASSWORD`
+- **appuser** / value of `MYSQL_PASSWORD`
 
 ### Sites (nginx vhosts)
 
